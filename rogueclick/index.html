@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Roguelike Idle Clicker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Press Start 2P', cursive;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #2c3e50;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Cpath fill-rule='evenodd' d='M11 0l5 20H6l5-20zm42 31a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM0 72h40v4H0v-4zm0-8h31v4H0v-4zm20-16h20v4H20v-4zM0 56h40v4H0v-4zm63-25a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm10 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM53 41a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm10 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm10 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-30 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-28-8a5 5 0 0 0-10 0h10zm10 0a5 5 0 0 1-10 0h10zM56 5a5 5 0 0 0-10 0h10zm10 0a5 5 0 0 1-10 0h10zm-3 46a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm10 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM21 0l5 20H16l5-20zm43 64v-4h-4v4h-4v4h4v4h4v-4h4v-4h-4zM36 13h4v4h-4v-4zm4 4h4v4h-4v-4zm-4 4h4v4h-4v-4zm8-8h4v4h-4v-4z'/%3E%3C/g%3E%3C/svg%3E");
+            color: #ecf0f1;
+            touch-action: manipulation;
+        }
+        .game-container {
+            background-color: rgba(44, 62, 80, 0.8);
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+            padding: 20px;
+            width: 350px;
+            max-width: 90vw;
+            touch-action: manipulation;
+        }
+        .stat {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 12px;
+        }
+        .progress-bar {
+            width: 100%;
+            background-color: #34495e;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 20px;
+            background-color: #2ecc71;
+            border-radius: 4px;
+            transition: width 0.3s ease-in-out;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .pulse {
+            animation: pulse 0.5s ease-in-out;
+        }
+        button {
+            background-color: #3498db;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-family: 'Press Start 2P', cursive;
+            transition: all 0.3s ease;
+            touch-action: manipulation;
+        }
+        button:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        button:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .enemy-name {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 16px;
+        }
+        .enemy-emoji {
+            font-size: 24px;
+            transition: transform 0.1s ease;
+        }
+        @keyframes shudder {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(2px, 2px) rotate(2deg); }
+            50% { transform: translate(0, 0) rotate(0deg); }
+            75% { transform: translate(-2px, 2px) rotate(-2deg); }
+            100% { transform: translate(0, 0) rotate(0deg); }
+        }
+        .shudder {
+            animation: shudder 0.2s ease-in-out;
+        }
+        h2, h3 {
+            color: #f1c40f;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h2>Roguelike Idle Clicker</h2>
+        <div id="player-stats"></div>
+        <div id="enemy-stats"></div>
+        <div>
+            <button id="attack-btn">Attack</button>
+            <button id="heal-btn">Heal (10 gold)</button>
+            <button id="auto-btn">Start Auto</button>
+        </div>
+    </div>
+
+    <script>
+        const player = {
+            level: 1,
+            exp: 0,
+            gold: 0,
+            attack: 5,
+            defense: 2,
+            health: 100,
+            maxHealth: 100
+        };
+
+        let enemy = null;
+        let autoAttackInterval = null;
+
+        function generateEnemy() {
+            const enemies = [
+                { name: 'Goblin', emoji: '👺', health: 30, attack: 3 },
+                { name: 'Orc', emoji: '👹', health: 40, attack: 4 },
+                { name: 'Skeleton', emoji: '💀', health: 25, attack: 5 },
+                { name: 'Zombie', emoji: '🧟', health: 35, attack: 3 },
+                { name: 'Slime', emoji: '🟢', health: 20, attack: 2 }
+            ];
+            const enemy = enemies[Math.floor(Math.random() * enemies.length)];
+            return {
+                ...enemy,
+                maxHealth: enemy.health
+            };
+        }
+
+        function updateUI() {
+            document.getElementById('player-stats').innerHTML = `
+                <div class="stat"><span>Gold: ${player.gold}</span><span>Level: ${player.level}</span></div>
+                <div class="progress-bar"><div id="exp-bar" class="progress-bar-fill" style="width: ${(player.exp / (player.level * 100)) * 100}%"></div></div>
+                <div class="stat"><span>Attack: ${player.attack}</span><span>Defense: ${player.defense}</span></div>
+                <div class="stat"><span>HP: ${player.health}/${player.maxHealth}</span></div>
+                <div class="progress-bar"><div id="health-bar" class="progress-bar-fill" style="width: ${(player.health / player.maxHealth) * 100}%"></div></div>
+            `;
+
+            if (enemy) {
+                document.getElementById('enemy-stats').innerHTML = `
+                    <div class="enemy-name"><span id="enemy-emoji" class="enemy-emoji">${enemy.emoji}</span><h3>${enemy.name}</h3></div>
+                    <div class="progress-bar"><div id="enemy-health-bar" class="progress-bar-fill" style="width: ${(enemy.health / enemy.maxHealth) * 100}%"></div></div>
+                    <div class="stat"><span>HP: ${enemy.health}/${enemy.maxHealth}</span></div>
+                `;
+            } else {
+                document.getElementById('enemy-stats').innerHTML = '';
+            }
+
+            document.getElementById('attack-btn').disabled = !enemy;
+            document.getElementById('heal-btn').disabled = player.gold < 10;
+        }
+
+        function attackEnemy() {
+            if (enemy) {
+                const damage = Math.max(0, player.attack - Math.floor(Math.random() * 3));
+                enemy.health = Math.max(0, enemy.health - damage);
+
+                // Shudder effect
+                const enemyEmoji = document.getElementById('enemy-emoji');
+                enemyEmoji.classList.add('shudder');
+                setTimeout(() => enemyEmoji.classList.remove('shudder'), 200);
+
+                // Pulse effect for enemy health bar
+                const enemyHealthBar = document.getElementById('enemy-health-bar');
+                enemyHealthBar.classList.add('pulse');
+                setTimeout(() => enemyHealthBar.classList.remove('pulse'), 500);
+
+                if (enemy.health === 0) {
+                    const goldEarned = Math.floor(Math.random() * 10) + 10;
+                    const expEarned = Math.floor(Math.random() * 20) + 20;
+                    player.gold += goldEarned;
+                    player.exp += expEarned;
+                    checkLevelUp();
+                    enemy = null;
+                } else {
+                    const playerDamage = Math.max(0, enemy.attack - player.defense);
+                    player.health = Math.max(0, player.health - playerDamage);
+
+                    // Pulse effect for player health bar
+                    const healthBar = document.getElementById('health-bar');
+                    healthBar.classList.add('pulse');
+                    setTimeout(() => healthBar.classList.remove('pulse'), 500);
+                }
+
+                updateUI();
+
+                if (!enemy) {
+                    enemy = generateEnemy();
+                    updateUI();
+                }
+            }
+        }
+
+        function checkLevelUp() {
+            if (player.exp >= player.level * 100) {
+                player.level++;
+                player.exp = 0;
+                player.attack += 2;
+                player.defense++;
+                player.maxHealth += 20;
+                player.health = player.maxHealth;
+
+                // Pulse effect for exp bar
+                const expBar = document.getElementById('exp-bar');
+                expBar.classList.add('pulse');
+                setTimeout(() => expBar.classList.remove('pulse'), 500);
+            }
+        }
+
+        function heal() {
+            if (player.gold >= 10) {
+                player.gold -= 10;
+                player.health = Math.min(player.maxHealth, player.health + 30);
+
+                // Pulse effect for player health bar
+                const healthBar = document.getElementById('health-bar');
+                healthBar.classList.add('pulse');
+                setTimeout(() => healthBar.classList.remove('pulse'), 500);
+
+                updateUI();
+            }
+        }
+
+        function toggleAutoAttack() {
+            if (autoAttackInterval) {
+                clearInterval(autoAttackInterval);
+                autoAttackInterval = null;
+                document.getElementById('auto-btn').textContent = 'Start Auto';
+            } else {
+                autoAttackInterval = setInterval(attackEnemy, 1000);
+                document.getElementById('auto-btn').textContent = 'Stop Auto';
+            }
+        }
+
+        document.getElementById('attack-btn').addEventListener('click', attackEnemy);
+        document.getElementById('heal-btn').addEventListener('click', heal);
+        document.getElementById('auto-btn').addEventListener('click', toggleAutoAttack);
+
+        // Prevent double-tap zoom on iOS
+        document.addEventListener('touchend', function(event) {
+            if (event.target.tagName === 'BUTTON') {
+                event.preventDefault();
+            }
+        });
+
+        enemy = generateEnemy();
+        updateUI();
+    </script>
+</body>
+</html>
